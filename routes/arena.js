@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const wss = require('../mixins/socket')
-const generate = require('../mixins/generate')
 
 router.post('/move', function(req, res, next) {
   try {
@@ -12,7 +11,7 @@ router.post('/move', function(req, res, next) {
       accepted = true;
     }
     res.send(accepted);
-    wss.send('movement', 'test')
+    res.send('movement', 'test')
   } catch (e) {
     console.log(e)
   }
@@ -20,12 +19,13 @@ router.post('/move', function(req, res, next) {
 router.get('/terrain', function(req, res, next) {
   try {
     if (res.app.locals.arena.terrain) {
-      wss.send(res.app.locals.arena.terrain)
+      res.send(res.app.locals.arena.terrain)
     } else {
-      wss.send('arena terrain not generated')
+      res.send('arena terrain not generated')
     }
   } catch (e) {
     console.log(e)
+    wss.send('arena terrain not generated')
   }
 });
 

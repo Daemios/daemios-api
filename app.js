@@ -32,7 +32,7 @@ app.use('/arena', arenaRouter);
 // TODO move this somewhere more appropriate
 const generate = require('./mixins/generate')
 app.locals.arena = {};
-app.locals.arena.terrain = generate.arena.terrain()
+app.locals.arena.terrain = generate.arena.terrain(16, 'test_seed')
 
 app.listen(3000, () => {
   console.log('Listening for requests')
