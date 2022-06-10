@@ -11,7 +11,6 @@ wss.on('connection', function connection(ws) {
 
 wss.send = function broadcast(type, body) {
   const message = JSON.stringify({type, body})
-  console.log(message)
   wss.clients.forEach(function each(client) {
     client.send(message);
   });
