@@ -35,9 +35,19 @@ router.get('/list', function(req, res, next) {
   try {
     pool.getConnection()
       .then(conn => {
-        conn.query("SELECT * FROM arena_history ORDER BY last_updated DESC LIMIT 10")
-          .then((rows) => {
-            res.send(rows);
+        conn.query("SELECT * FROM arena_history ORDER BY created_on DESC LIMIT 10")
+          .then((arenas) => {
+            if (arenas) {
+              conn.query(`SELECT * FROM arena_history ORDER BY last_active DESC LIMIT 1`)
+                .then((active) => {
+                  if (active) {
+                    res.send({
+                      active_arena_history_id: active[0].arena_history_id,
+                      saved_arenas: arenas
+                    });
+                  }
+                })
+            }
           })
           .then((res) => {
             conn.end();
@@ -119,19 +129,39 @@ router.post('/load/:id', function(req, res, next) {
     pool.getConnection()
       .then(conn => {
         conn.query(`SELECT * FROM arena_history WHERE arena_history_id = ${req.params.id} LIMIT 1`)
-          .then((rows) => {
-            const arena = rows[0];
-            req.app.locals.arena.terrain = generate.arena.terrain(arena.size, arena.seed)
-            wss.send('arena', req.app.locals.arena)
-            res.send(true);
+          .then((single) => {
+            if (single) {
+              conn.query(`UPDATE arena_history SET last_active = NOW() WHERE arena_history_id = ${single[0].arena_history_id}`)
+                .then((updated) => {
+                  if (updated) {
+                    conn.query(`SELECT * FROM arena_history ORDER BY created_on DESC LIMIT 10`)
+                      .then((arenas) => {
+                        if (arenas) {
+                          conn.query(`SELECT * FROM arena_history ORDER BY last_active DESC LIMIT 1`)
+                            .then((active) => {
+                              if (active) {
+                                console.log(single.size, single.seed)
+                                req.app.locals.arena.terrain = generate.arena.terrain(single[0].size, single[0].seed)
+                                wss.send('arena', req.app.locals.arena)
+                                res.send({
+                                  active_arena_history_id: active[0].arena_history_id,
+                                  saved_arenas: arenas
+                                });
+                              }
+                            })
+                        }
+                      })
+                  }
+                })
+            }
           })
           .then((res) => {
             conn.end();
           })
           .catch(err => {
+            //not connected
             console.log(err)
-            conn.end();
-          })
+          });
       }).catch(err => {
       //not connected
       console.log(err)
