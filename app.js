@@ -22,17 +22,35 @@ const userRouter = require('./routes/users');
 const inventoryRouter = require('./routes/inventory');
 const abilityRouter = require('./routes/ability');
 const arenaRouter = require('./routes/arena');
+const worldRouter = require('./routes/world');
+const pool = require("./mixins/db");
+const generate = require("./mixins/generate");
+const wss = require("./mixins/socket");
 
 app.use('/', indexRouter);
 app.use('/user', userRouter);
 app.use('/inventory', inventoryRouter);
 app.use('/ability', abilityRouter);
 app.use('/arena', arenaRouter);
+app.use('/world', worldRouter);
 
 // TODO move this somewhere more appropriate
-const generate = require('./mixins/generate')
 app.locals.arena = {};
-app.locals.arena.terrain = generate.arena.terrain(16, 'test_seed')
+pool.getConnection()
+  .then(conn => {
+    conn.query(`SELECT * FROM arena_history ORDER BY last_active DESC LIMIT 1`)
+      .then((single) => {
+        app.locals.arena.terrain = generate.arena.simplexTerrain(single[0].size, single[0].seed)
+        wss.send('arena', app.locals.arena)
+      })
+  })
+
+// World stuff
+app.locals.world = {
+  size: 256,
+  seed: 'einstein2',
+};
+wss.send('world', app.locals.world)
 
 app.listen(3000, () => {
   console.log('Listening for requests')

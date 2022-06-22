@@ -140,8 +140,7 @@ router.post('/load/:id', function(req, res, next) {
                           conn.query(`SELECT * FROM arena_history ORDER BY last_active DESC LIMIT 1`)
                             .then((active) => {
                               if (active) {
-                                console.log(single.size, single.seed)
-                                req.app.locals.arena.terrain = generate.arena.terrain(single[0].size, single[0].seed)
+                                req.app.locals.arena.terrain = generate.arena.simplexTerrain(single[0].size, single[0].seed)
                                 wss.send('arena', req.app.locals.arena)
                                 res.send({
                                   active_arena_history_id: active[0].arena_history_id,
@@ -183,7 +182,7 @@ router.post('/create', function(req, res, next) {
                 conn.query(`SELECT * FROM arena_history ORDER BY last_updated DESC LIMIT 10`)
                   .then((rows) => {
                     if (rows) {
-                      req.app.locals.arena.terrain = generate.arena.terrain(body.size, seed)
+                      req.app.locals.arena.terrain = generate.arena.simplexTerrain(body.size, seed)
                       wss.send('arena', req.app.locals.arena)
                       res.send(rows);
                     }
