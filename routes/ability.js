@@ -8,7 +8,11 @@ router.get('/elements', function(req, res, next) {
       .then(conn => {
         conn.query("SELECT * FROM elements")
           .then((rows) => {
-            res.send(rows);
+            let elements = {};
+            rows.forEach(row => {
+              elements[row.element_id] = row;
+            })
+            res.send(elements);
           })
           .then((res) => {
             conn.end();

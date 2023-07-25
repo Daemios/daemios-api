@@ -9,7 +9,7 @@ const user = {
   },
   getUserById: async (id) => {
     const conn = await pool.getConnection();
-    const rows = await conn.query(`SELECT * FROM users WHERE id = '${id}'`);
+    const rows = await conn.query(`SELECT * FROM users WHERE user_id = '${id}'`);
     await conn.release();
     return rows[0];
   }

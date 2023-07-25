@@ -23,17 +23,21 @@ function init(passport) {
     );
 
   }
+
   passport.use(new LocalStrategy({
     usernameField: 'email',
   }, authenticateUser));
+
   passport.serializeUser((user, done) => {
-    return done(null, user.user_id);
+    return done(null, user);
   });
-  passport.deserializeUser(function(id, done) {
-    users.getUserById(id).then((user) => {
+
+  passport.deserializeUser(function(user, done) {
+    users.getUserById(user.user_id).then((user) => {
       done(null, user);
     });
   });
+
 }
 
 module.exports = init;

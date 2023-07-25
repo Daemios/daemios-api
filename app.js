@@ -3,59 +3,45 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 const express = require('express');
-const session = require('express-session');
 const passport = require('passport');
-const path = require('path');
-const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const app = express();
-app.use(logger('dev'));
-app.use(cookieParser());
-app.use(express.urlencoded({ extended: false }));
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(function(req, res, next) {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Credentials", "true");
-  res.header("Access-Control-Allow-Headers", "Authorization, Accept, Cache-Control, Content-Type, X-Organization-Alias");
-  res.header("Access-Control-Allow-Methods", "*");
-  next();
-});
-app.use (function (req, res, next) {
-  if (req.method !== 'OPTIONS' && false) {
-    res.redirect('/login');
-  } else {
-    next();
-  }
-});
-
-
-const indexRouter = require('./routes/index');
-const userRouter = require('./routes/user');
-const inventoryRouter = require('./routes/inventory');
-const abilityRouter = require('./routes/ability');
-const arenaRouter = require('./routes/arena');
-const worldRouter = require('./routes/world');
 const pool = require("./mixins/db");
 const generate = require("./mixins/generate");
 const wss = require("./mixins/socket");
 
-const initializePassport = require('./passport-config');
-initializePassport(passport);
-app.use(session({
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-}))
-app.use(passport.initialize( { session: true } ));
-app.use(passport.session( { session: true } ));
 
-app.use('/', indexRouter);
-app.use('/user', userRouter);
-app.use('/inventory', inventoryRouter);
-app.use('/ability', abilityRouter);
-app.use('/arena', arenaRouter);
-app.use('/world', worldRouter);
+app.use(require('cors')({
+  // this must be changed for production
+  origin: 'http://localhost:8080',
+  credentials: true,
+}));
+app.use(express.urlencoded({ extended: false }));
+app.use(express.json());
+app.use(logger('dev'));
+app.use(require('express-session')({
+  secret: process.env.SESSION_SECRET,
+  resave: true,
+  saveUninitialized: true,
+}));
+app.use(passport.initialize( { session: true } ));
+app.use(passport.session( {
+  session: true,
+  cookie: {
+    maxAge: 1000 * 60 * 60 * 24 // Equals 1 day (1 day * 24 hr/1 day * 60 min/1 hr * 60 sec/1 min * 1000 ms / 1 sec)
+  },
+  credentials: true
+} ));
+require('./passport-config')(passport); // This is just abstracting the passport setup into a separate file
+
+app.use('/', require('./routes/index'));
+app.use('/user', require('./routes/user'));
+app.use('/characters', require('./routes/characters'));
+app.use('/inventory', require('./routes/inventory'));
+app.use('/ability', require('./routes/ability'));
+app.use('/arena', require('./routes/arena'));
+app.use('/world', require('./routes/world'));
+app.use('/dm', require('./routes/dm'));
 
 // TODO move this somewhere more appropriate
 app.locals.arena = {};
