@@ -1,42 +1,74 @@
+// Load environment variables if not in production
 if (process.env.NODE_ENV !== 'production') {
   require('dotenv').config();
 }
 
+// Import necessary modules
 const express = require('express');
 const passport = require('passport');
 const logger = require('morgan');
 const app = express();
-const pool = require("./mixins/db");
-const generate = require("./mixins/generate");
-const wss = require("./mixins/socket");
+const pool = require("./mixins/db"); // Database pool
+const generate = require("./mixins/generate"); // Custom generate module
+const wss = require("./mixins/socket"); // WebSockets
+const session = require('express-session'); // Express session middleware
+const MySQLStore = require('express-mysql-session')(session); // MySQL session store for Express
 
+// Configuration options for connecting to MariaDB
+const options = {
+  host: process.env.db_host, // Host name
+  port: 3306, // Port number
+  user: process.env.db_user, // User name
+  password: process.env.db_password, // Password
+  database: process.env.db_database // Database name
+};
 
+// Create a new instance of the MySQLStore with the connection options
+const sessionStore = new MySQLStore(options);
+
+// Allow CORS for specified origin
 app.use(require('cors')({
-  // this must be changed for production
-  origin: 'http://localhost:8080',
-  credentials: true,
+  origin: 'http://localhost:8080', // Allowed origin
+  credentials: true, // Allow credentials
 }));
+
+// Middleware to parse URL-encoded bodies
 app.use(express.urlencoded({ extended: false }));
+
+// Middleware to parse JSON bodies
 app.use(express.json());
+
+// Middleware for logging HTTP requests
 app.use(logger('dev'));
-app.use(require('express-session')({
-  secret: process.env.SESSION_SECRET,
-  resave: true,
-  saveUninitialized: true,
-}));
-app.use(passport.initialize( { session: true } ));
-app.use(passport.session( {
-  session: true,
+
+// Middleware to handle sessions, using MySQL as the store
+app.use(session({
+  key: 'session_cookie_name', // Name of the cookie
+  secret: process.env.SESSION_SECRET, // Secret key for signing the session ID cookie
+  store: sessionStore, // The MySQL session store
+  resave: true, // Force session to be saved back to the store
+  saveUninitialized: true, // Save uninitialized sessions
   cookie: {
-    maxAge: 1000 * 60 * 60 * 24 // Equals 1 day (1 day * 24 hr/1 day * 60 min/1 hr * 60 sec/1 min * 1000 ms / 1 sec)
-  },
-  credentials: true
-} ));
-require('./passport-config')(passport); // This is just abstracting the passport setup into a separate file
+    maxAge: 1000 * 60 * 60 * 24 // Set cookie expiration time to 1 day
+  }
+}));
+
+// Initialize Passport with session support
+app.use(passport.initialize( { session: true } ));
+
+// Enable persistent login sessions with Passport
+app.use(passport.session());
+
+// Import Passport configuration
+require('./passport-config')(passport);
+
+// Middleware to route guard
+app.use(require('./middleware/auth').isAuth);
 
 app.use('/', require('./routes/index'));
 app.use('/user', require('./routes/user'));
 app.use('/characters', require('./routes/characters'));
+app.use('/creature_data', require('./routes/creature_data'));
 app.use('/inventory', require('./routes/inventory'));
 app.use('/ability', require('./routes/ability'));
 app.use('/arena', require('./routes/arena'));

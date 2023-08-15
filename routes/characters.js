@@ -1,17 +1,9 @@
 const router = require('express').Router();
 const pool = require('../mixins/db')
+const characters = require('../mixins/characters')
 
-router.get('/races', async(req, res, next) => {
-  pool.getConnection()
-    .then(conn => {
-      conn.query(`SELECT * FROM races`)
-        .then(rows => {
-          res.send({
-            success: true,
-            races: rows
-          })
-        })
-    })
+router.get('/selectCharacter', async(req, res, next) => {
+  characters.selectCharacter(req, res, next)
 });
 
 module.exports = router;

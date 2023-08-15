@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const pool = require('../mixins/db')
+const characters = require('../mixins/characters');
 const bcrypt = require('bcrypt');
 const passport = require('passport');
 
@@ -71,11 +72,15 @@ router.post('/register', async(req, res, next) => {
 });
 
 router.post('/logout', (req, res) => {
+  characters.deactivateCharacters(req.session.passport.user.user_id);
   req.logout();
   res.send({
     success: true
   });
 });
+
+// Get the character data for a selected character
+
 
 router.post('/character/select', (req, res) => {
   pool.getConnection()
@@ -84,15 +89,58 @@ router.post('/character/select', (req, res) => {
     });
 });
 
+router.post('/character/create', async(req, res, next) => {
+  pool.getConnection()
+    .then(conn => {
+      console.log(req)
+      conn.query(`INSERT INTO user_characters (user_id, first_name, last_name, race_id) VALUES ('${req.session.passport.user_id}', '${req.body.first_name}', '${req.body.last_name}', '${req.body.race_id}')`)
+        .then((rows) => {
+          if (rows.affectedRows === 1) {
+            res.send({
+              success: true,
+            })
+          } else {
+            res.sendStatus(500);
+          }
+        })
+        .then((res) => {
+          conn.end();
+        })
+    }).catch(err => {
+    //not connected
+    console.log(err)
+  });
+});
+
 router.get('/characters', async(req, res, next) =>  {
   pool.getConnection()
     .then(conn => {
-      conn.query(`SELECT * FROM player_characters WHERE user_id = '${req.session.passport.user.user_id}'`)
+      conn.query(`SELECT * FROM user_characters WHERE user_id = '${req.session.passport.user.user_id}'`)
         .then((rows) => {
           if (rows.length > 0) {
+            let characters = [];
+            // Add a location key to each character
+            rows.forEach((row) => {
+              characters.push({
+                ...row,
+                location: {
+                  dangerous: true,
+                  name: 'The Wilds',
+                },
+                level: 1,
+                vessels: [
+                  {
+                    color: '#156156',
+                  },
+                  {
+                    color: '#a12078',
+                  }
+                ]
+              })
+            })
             res.send({
               success: true,
-              characters: rows
+              characters: characters
             })
           } else {
             res.send({
