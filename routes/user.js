@@ -80,8 +80,6 @@ router.post('/logout', (req, res) => {
 });
 
 // Get the character data for a selected character
-
-
 router.post('/character/select', (req, res) => {
   pool.getConnection()
     .then(conn => {
