@@ -62,19 +62,24 @@ app.use(passport.session());
 // Import Passport configuration
 require('./passport-config')(passport);
 
-// Middleware to route guard
+// Non-authenticated routes
+app.use('/login', require('./routes/login'));
+
+// Middleware to check for authentication
 app.use(require('./middleware/auth').isAuth);
 
+// Authenticated routes
 app.use('/', require('./routes/index'));
 app.use('/user', require('./routes/user'));
 app.use('/characters', require('./routes/characters'));
-app.use('/creature_data', require('./routes/creature_data'));
+app.use('/data', require('./routes/data'));
 app.use('/inventory', require('./routes/inventory'));
 app.use('/ability', require('./routes/ability'));
 app.use('/arena', require('./routes/arena'));
 app.use('/world', require('./routes/world'));
 app.use('/dm', require('./routes/dm'));
 
+// Arena stuff
 // TODO move this somewhere more appropriate
 app.locals.arena = {};
 pool.getConnection()
