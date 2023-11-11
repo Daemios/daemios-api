@@ -1,18 +1,18 @@
-const pool = require('../mixins/db')
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 const user = {
-  getUserByEmail: async (email) => {
-    const conn = await pool.getConnection();
-    const rows = await conn.query(`SELECT * FROM users WHERE email = '${email}'`);
-    await conn.release();
-    return rows[0];
-  },
-  getUserById: async (id) => {
-    const conn = await pool.getConnection();
-    const rows = await conn.query(`SELECT * FROM users WHERE user_id = '${id}'`);
-    await conn.release();
-    return rows[0];
-  }
-}
+  getUserByEmail: async (email) => prisma.user.findUnique({
+    where: {
+      email,
+    },
+  }),
+  getUserById: async (id) => prisma.user.findUnique({
+    where: {
+      user_id: id,
+    },
+  }),
+};
 
-module.exports = user;
+export default user;

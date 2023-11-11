@@ -1,17 +1,20 @@
-const router = require('express').Router();
-const pool = require('../mixins/db')
+import { PrismaClient } from '@prisma/client';
 
-router.get('/races', async(req, res, next) => {
-  pool.getConnection()
-    .then(conn => {
-      conn.query(`SELECT * FROM races`)
-        .then(rows => {
-          res.send({
-            success: true,
-            races: rows
-          })
-        })
-    })
+const router = require('express').Router();
+
+const prisma = new PrismaClient();
+
+router.get('/races', async (req, res) => {
+  try {
+    const rows = await prisma.race.findMany();
+    res.send({
+      success: true,
+      races: rows,
+    });
+  } catch (e) {
+    console.log(e);
+    res.status(500).send('Server Error');
+  }
 });
 
-module.exports = router;
+export default router;

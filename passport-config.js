@@ -1,43 +1,36 @@
-const LocalStrategy = require('passport-local').Strategy;
-const bcrypt = require('bcrypt');
-const users = require('./mixins/user');
+import { Strategy as LocalStrategy } from 'passport-local';
+import bcrypt from 'bcrypt';
+import users from './mixins/user';
 
 function init(passport) {
-  // used to serialize the user for the session
   const authenticateUser = async (email, password, done) => {
-    users.getUserByEmail(email)
-      .then((user) => {
-        if (!user) {
-          return done(null, false, { message: 'Incorrect email or password' });
-        }
-        bcrypt.compare(password, user.password, (err, isMatch) => {
-          if (err) {
-            return done(err);
-          }
-          if (!isMatch) {
-            return done(null, false, { message: 'Incorrect email or password' });
-          }
-          return done(null, user);
-        });
+    try {
+      const user = await users.getUserByEmail(email);
+      if (!user) {
+        return done(null, false, { message: 'Incorrect email or password' });
       }
-    );
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch) {
+        return done(null, false, { message: 'Incorrect email or password' });
+      }
+      return done(null, user);
+    } catch (err) {
+      return done(err);
+    }
+  };
 
-  }
+  passport.use(new LocalStrategy({ usernameField: 'email' }, authenticateUser));
 
-  passport.use(new LocalStrategy({
-    usernameField: 'email',
-  }, authenticateUser));
+  passport.serializeUser((user, done) => done(null, user));
 
-  passport.serializeUser((user, done) => {
-    return done(null, user);
+  passport.deserializeUser(async (user, done) => {
+    try {
+      const foundUser = await users.getUserById(user.user_id);
+      done(null, foundUser);
+    } catch (err) {
+      done(err, null);
+    }
   });
-
-  passport.deserializeUser(function(user, done) {
-    users.getUserById(user.user_id).then((user) => {
-      done(null, user);
-    });
-  });
-
 }
 
-module.exports = init;
+export default init;

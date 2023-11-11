@@ -1,217 +1,171 @@
-const express = require('express');
-const router = express.Router();
-const wss = require('../mixins/socket')
-const pool = require("../mixins/db");
-const crypto = require('crypto')
-const generate = require("../mixins/generate");
+import { PrismaClient } from '@prisma/client';
 
-router.post('/move', function(req, res, next) {
+const express = require('express');
+
+const router = express.Router();
+const crypto = require('crypto');
+const wss = require('../mixins/socket');
+const generate = require('../mixins/generate');
+
+const prisma = new PrismaClient();
+
+router.post('/move', async (req, res) => {
   try {
     let accepted = false;
-    console.log('validating movement')
+    console.log('validating movement');
     // Validate the movement here
-    if (true) {
+    if (true) { // Replace with actual validation logic
       accepted = true;
     }
     res.send(accepted);
-    wss.send('movement', 'test')
+    wss.send('movement', 'test'); // Assuming wss is a WebSocket instance defined elsewhere
   } catch (e) {
-    console.log(e)
+    console.log(e);
+    res.status(500).send('Server Error');
   }
 });
-router.get('/terrain', function(req, res, next) {
+
+router.get('/terrain', (req, res) => {
   try {
     if (res.app.locals.arena.terrain) {
-      res.send(res.app.locals.arena.terrain)
+      res.send(res.app.locals.arena.terrain);
     } else {
-      res.send('arena terrain not generated')
+      res.send('arena terrain not generated');
     }
   } catch (e) {
-    console.log(e)
-    wss.send('arena terrain not generated')
+    console.log(e);
+    wss.send('arena terrain not generated');
   }
 });
-router.get('/list', function(req, res, next) {
-  try {
-    pool.getConnection()
-      .then(conn => {
-        conn.query("SELECT * FROM arena_history ORDER BY created_on DESC LIMIT 10")
-          .then((arenas) => {
-            if (arenas) {
-              conn.query(`SELECT * FROM arena_history ORDER BY last_active DESC LIMIT 1`)
-                .then((active) => {
-                  if (active) {
-                    res.send({
-                      active_arena_history_id: active[0].arena_history_id,
-                      saved_arenas: arenas
-                    });
-                  }
-                })
-            }
-          })
-          .then((res) => {
-            conn.end();
-          })
-          .catch(err => {
-            console.log(err)
-            conn.end();
-          })
-      }).catch(err => {
-      //not connected
-      console.log(err)
-    });
-  } catch (e) {
-    console.log(e)
-  }
-});
-router.get('/single/:id', function(req, res, next) {
-  try {
-    pool.getConnection()
-      .then(conn => {
-        conn.query(`SELECT * FROM arena_history WHERE arena_history_id = ${req.params.id}`)
-          .then((rows) => {
-            res.send(rows);
-          })
-          .then((res) => {
-            conn.end();
-          })
-          .catch(err => {
-            console.log(err)
-            conn.end();
-          })
-      }).catch(err => {
-      //not connected
-      console.log(err)
-    });
-  } catch (e) {
-    console.log(e)
-  }
-});
-router.delete('/single/:id', function(req, res, next) {
-  try {
-    // Body is empty again
 
+router.get('/list', async (req, res) => {
+  try {
+    const arenas = await prisma.arena_history.findMany({
+      orderBy: { created_on: 'desc' },
+      take: 10,
+    });
+
+    if (arenas) {
+      const active = await prisma.arena_history.findFirst({
+        orderBy: { last_active: 'desc' },
+      });
+
+      if (active) {
+        res.send({
+          active_arena_history_id: active.arena_history_id,
+          saved_arenas: arenas,
+        });
+      }
+    }
+  } catch (e) {
+    console.log(e);
+    res.status(500).send('Server Error');
+  }
+});
+
+router.get('/single/:id', async (req, res) => {
+  try {
+    const rows = await prisma.arena_history.findMany({
+      where: { arena_history_id: parseInt(req.params.id, 10) },
+    });
+    res.send(rows);
+  } catch (e) {
+    console.log(e);
+    res.status(500).send('Server Error');
+  }
+});
+
+router.delete('/single/:id', async (req, res) => {
+  try {
     if (req.params.id) {
-      pool.getConnection()
-        .then(conn => {
-          conn.query(`DELETE FROM arena_history WHERE arena_history_id = ${req.params.id}`)
-            .then((rows) => {
-              if (rows.affectedRows > 0) {
-                conn.query(`SELECT * FROM arena_history ORDER BY last_updated DESC LIMIT 10`)
-                  .then((rows) => {
-                    if (rows) {
-                      res.send(rows);
-                    }
-                  })
-                  .then((res) => {
-                    conn.end();
-                  })
-                  .catch(err => {
-                    console.log(err)
-                    conn.end();
-                  })
-              }
-            })
-        }).catch(err => {
-        //not connected
-        console.log(err)
+      const deleteResult = await prisma.arena_history.delete({
+        where: { arena_history_id: parseInt(req.params.id, 10) },
       });
 
+      if (deleteResult) {
+        const rows = await prisma.arena_history.findMany({
+          orderBy: { last_updated: 'desc' },
+          take: 10,
+        });
+        res.send(rows);
+      }
     } else {
-      res.send('Missing args for arena/delete')
+      res.send('Missing args for arena/delete');
     }
   } catch (e) {
-    console.log(e)
+    console.log(e);
+    res.status(500).send('Server Error');
   }
 });
-router.post('/load/:id', function(req, res, next) {
+
+router.post('/load/:id', async (req, res) => {
   try {
-    pool.getConnection()
-      .then(conn => {
-        conn.query(`SELECT * FROM arena_history WHERE arena_history_id = ${req.params.id} LIMIT 1`)
-          .then((single) => {
-            if (single) {
-              conn.query(`UPDATE arena_history SET last_active = NOW() WHERE arena_history_id = ${single[0].arena_history_id}`)
-                .then((updated) => {
-                  if (updated) {
-                    conn.query(`SELECT * FROM arena_history ORDER BY created_on DESC LIMIT 10`)
-                      .then((arenas) => {
-                        if (arenas) {
-                          conn.query(`SELECT * FROM arena_history ORDER BY last_active DESC LIMIT 1`)
-                            .then((active) => {
-                              if (active) {
-                                req.app.locals.arena.terrain = generate.arena.simplexTerrain(single[0].size, single[0].seed)
-                                wss.send('arena', req.app.locals.arena)
-                                res.send({
-                                  active_arena_history_id: active[0].arena_history_id,
-                                  saved_arenas: arenas
-                                });
-                              }
-                            })
-                        }
-                      })
-                  }
-                })
-            }
-          })
-          .then((res) => {
-            conn.end();
-          })
-          .catch(err => {
-            //not connected
-            console.log(err)
-          });
-      }).catch(err => {
-      //not connected
-      console.log(err)
+    const single = await prisma.arena_history.findFirst({
+      where: { arena_history_id: parseInt(req.params.id) },
     });
-  } catch (e) {
-    console.log(e)
-  }
-});
-router.post('/create', function(req, res, next) {
-  try {
-    const body = req.body;
-    if (body.name && body.size) {
-      const seed = crypto.randomBytes(20).toString('hex');
-      pool.getConnection()
-        .then(conn => {
-          conn.query(`INSERT INTO arena_history (name, seed, size) VALUES ('${body.name}', '${seed}', ${body.size})`)
-            .then((rows) => {
-              if (rows.affectedRows > 0) {
-                conn.query(`SELECT * FROM arena_history ORDER BY last_updated DESC LIMIT 10`)
-                  .then((rows) => {
-                    if (rows) {
-                      req.app.locals.arena.terrain = generate.arena.simplexTerrain(body.size, seed)
-                      wss.send('arena', req.app.locals.arena)
-                      res.send(rows);
-                    }
-                  })
-                  .then((res) => {
-                    conn.end();
-                  })
-                  .catch(err => {
-                    console.log(err)
-                    conn.end();
-                  })
-              }
-            })
-            .catch(err => {
-              console.log(err)
-              conn.end();
-            })
-        }).catch(err => {
-        //not connected
-        console.log(err)
+
+    if (single) {
+      await prisma.arena_history.update({
+        where: { arena_history_id: single.arena_history_id },
+        data: { last_active: new Date() },
       });
 
-    } else {
-      res.code(500).send()
+      const arenas = await prisma.arena_history.findMany({
+        orderBy: { created_on: 'desc' },
+        take: 10,
+      });
+
+      const active = await prisma.arena_history.findFirst({
+        orderBy: { last_active: 'desc' },
+      });
+
+      if (arenas && active) {
+        req.app.locals.arena.terrain = generate.arena.simplexTerrain(single.size, single.seed);
+        wss.send('arena', req.app.locals.arena); // Assuming wss is a WebSocket instance defined elsewhere
+        res.send({
+          active_arena_history_id: active.arena_history_id,
+          saved_arenas: arenas,
+        });
+      }
     }
   } catch (e) {
-    console.log(e)
+    console.log(e);
+    res.status(500).send('Server Error');
+  }
+});
+
+router.post('/create', async (req, res) => {
+  try {
+    const { name, size } = req.body;
+    if (name && size) {
+      const seed = crypto.randomBytes(20).toString('hex');
+      const createResult = await prisma.arena_history.create({
+        data: {
+          name,
+          seed,
+          size,
+        },
+      });
+
+      if (createResult) {
+        const arenas = await prisma.arena_history.findMany({
+          orderBy: { last_updated: 'desc' },
+          take: 10,
+        });
+
+        if (arenas) {
+          req.app.locals.arena.terrain = generate.arena.simplexTerrain(size, seed);
+          wss.send('arena', req.app.locals.arena); // Assuming wss is a WebSocket instance defined elsewhere
+          res.send(arenas);
+        }
+      }
+    } else {
+      res.status(500).send('Missing required fields');
+    }
+  } catch (e) {
+    console.log(e);
+    res.status(500).send('Server Error');
   }
 });
 
 module.exports = router;
-
