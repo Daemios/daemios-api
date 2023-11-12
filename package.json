@@ -4,33 +4,35 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node app.js",
-    "dev": "nodemon app.js"
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js",
+    "prisma:migrate": "prisma migrate deploy",
+    "prisma:generate": "prisma generate"
   },
   "dependencies": {
     "@prisma/client": "^5.5.2",
-    "bcrypt": "^5.0.1",
-    "cookie-parser": "~1.4.4",
-    "cors": "^2.8.5",
-    "crypto": "^1.0.1",
-    "debug": "~2.6.9",
-    "dotenv": "^16.0.1",
-    "eslint": "^8.52.0",
-    "eslint-config-airbnb": "^19.0.4",
-    "express": "^4.18.2",
-    "express-flash": "^0.0.2",
-    "express-mysql-session": "^3.0.0",
-    "express-session": "^1.17.3",
-    "http-errors": "~1.6.3",
-    "morgan": "~1.9.1",
-    "nodemon": "^2.0.16",
-    "passport": "^0.6.0",
-    "passport-local": "^1.0.0",
-    "pug": "^2.0.4",
-    "simplex-noise": "^3.0.1",
-    "ws": "^8.7.0"
+    "@quixo3/prisma-session-store": "^3.1.13",
+    "bcrypt": "*",
+    "cookie-parser": "*",
+    "cors": "*",
+    "debug": "*",
+    "dotenv": "*",
+    "express": "*",
+    "express-flash": "*",
+    "express-session": "*",
+    "http-errors": "*",
+    "morgan": "*",
+    "passport": "*",
+    "passport-local": "*",
+    "pug": "*",
+    "simplex-noise": "*",
+    "ws": "*"
   },
   "devDependencies": {
-    "prisma": "^5.5.2"
+    "eslint": "*",
+    "eslint-config-airbnb": "*",
+    "eslint-plugin-import": "^2.29.0",
+    "nodemon": "*",
+    "prisma": "*"
   }
 }

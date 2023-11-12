@@ -1,12 +1,10 @@
 import { PrismaClient } from '@prisma/client';
-
-const express = require('express');
+import express from 'express';
+import crypto from 'crypto';
+import wss from '../lib/socket.js';
+import generate from '../lib/generate.js';
 
 const router = express.Router();
-const crypto = require('crypto');
-const wss = require('../mixins/socket');
-const generate = require('../mixins/generate');
-
 const prisma = new PrismaClient();
 
 router.post('/move', async (req, res) => {
@@ -101,7 +99,7 @@ router.delete('/single/:id', async (req, res) => {
 router.post('/load/:id', async (req, res) => {
   try {
     const single = await prisma.arena_history.findFirst({
-      where: { arena_history_id: parseInt(req.params.id) },
+      where: { arena_history_id: req.params.id },
     });
 
     if (single) {
@@ -168,4 +166,4 @@ router.post('/create', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

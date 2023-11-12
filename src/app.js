@@ -6,28 +6,28 @@ import cors from 'cors';
 import express from 'express';
 import passport from 'passport';
 import logger from 'morgan';
-import session from 'express-session';
-import MySQLSession from 'express-mysql-session';
+import expressSession from 'express-session';
+import { PrismaSessionStore } from '@quixo3/prisma-session-store';
+import { PrismaClient } from '@prisma/client';
+import open from './routes/open.js';
+
+import initializePassport from './passport-config.js';
+
+import { isAuth } from './middleware/user.js';
+import userRoutes from './routes/user.js';
+import dataRoutes from './routes/data.js';
+import inventoryRoutes from './routes/inventory.js';
+import abilityRoutes from './routes/ability.js';
+import arenaRoutes from './routes/arena.js';
+import worldRoutes from './routes/world.js';
+import dmRoutes from './routes/dm.js';
 
 if (process.env.NODE_ENV !== 'production') {
   dotenv.config();
 }
-const MySQLStore = MySQLSession(session); // WebSockets
 
 // Initialize express application
 const app = express();
-
-// Configuration options for connecting to MariaDB
-const options = {
-  host: process.env.db_host, // Host name
-  port: 3306, // Port number
-  user: process.env.db_user, // User name
-  password: process.env.db_password, // Password
-  database: process.env.db_database, // Database name
-};
-
-// Create a new instance of the MySQLStore with the connection options
-const sessionStore = new MySQLStore(options);
 
 // Allow CORS for specified origin
 app.use(cors({
@@ -45,16 +45,24 @@ app.use(express.json());
 app.use(logger('dev'));
 
 // Middleware to handle sessions, using MySQL as the store
-app.use(session({
-  key: 'session_cookie_name', // Name of the cookie
-  secret: process.env.SESSION_SECRET, // Secret key for signing the session ID cookie
-  store: sessionStore, // The MySQL session store
-  resave: true, // Force session to be saved back to the store
-  saveUninitialized: true, // Save uninitialized sessions
-  cookie: {
-    maxAge: 1000 * 60 * 60 * 24, // Set cookie expiration time to 1 day
-  },
-}));
+app.use(
+  expressSession({
+    cookie: {
+      maxAge: 7 * 24 * 60 * 60 * 1000, // ms
+    },
+    secret: 'a santa at nasa',
+    resave: true,
+    saveUninitialized: true,
+    store: new PrismaSessionStore(
+      new PrismaClient(),
+      {
+        checkPeriod: 2 * 60 * 1000, // ms
+        dbRecordIdIsSessionId: true,
+        dbRecordIdFunction: undefined,
+      },
+    ),
+  }),
+);
 
 // Initialize Passport with session support
 app.use(passport.initialize({ session: true }));
@@ -62,31 +70,31 @@ app.use(passport.initialize({ session: true }));
 // Enable persistent login sessions with Passport
 app.use(passport.session());
 
-// Import Passport configuration
-require('./passport-config')(passport);
+// Initialize Passport configuration
+initializePassport(passport);
 
 // Non-authenticated routes
-app.use('/login', require('./routes/login'));
+app.use('/open', open);
 
 // Middleware to check for authentication
-app.use(require('./middleware/auth').isAuth);
+app.use(isAuth);
 
 // Authenticated routes
-app.use('/user', require('./routes/user'));
-app.use('/data', require('./routes/data'));
-app.use('/inventory', require('./routes/inventory'));
-app.use('/ability', require('./routes/ability'));
-app.use('/arena', require('./routes/arena'));
-app.use('/world', require('./routes/world'));
-app.use('/dm', require('./routes/dm'));
+app.use('/user', userRoutes);
+app.use('/data', dataRoutes);
+app.use('/inventory', inventoryRoutes);
+app.use('/ability', abilityRoutes);
+app.use('/arena', arenaRoutes);
+app.use('/world', worldRoutes);
+app.use('/dm', dmRoutes);
 
 app.listen(3000, () => {
   console.log('Listening for requests');
 });
 
-// Arena stuff
-// TODO move this somewhere more appropriate
 /**
+ // Arena stuff
+ // TODO move this somewhere more appropriate
 app.locals.arena = {};
 pool.getConnection()
   .then((conn) => {

@@ -1,15 +1,15 @@
 import { PrismaClient } from '@prisma/client';
 
-const express = require('express');
+import express from 'express';
 
 const router = express.Router();
 
 const prisma = new PrismaClient();
 
-router.get('/:id', async (req, res, next) => {
+router.get('/:id', async (req, res) => {
   try {
     console.log(req.params.id);
-    const rows = await prisma.inventory.findMany({
+    const rows = await prisma.characterInventory.findMany({
       where: { character_id: parseInt(req.params.id) },
     });
     res.send(rows);

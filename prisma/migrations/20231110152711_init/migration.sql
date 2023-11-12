@@ -175,7 +175,7 @@ CREATE TABLE `User` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `email` VARCHAR(191) NOT NULL,
     `password` VARCHAR(191) NOT NULL,
-    `display_name` VARCHAR(191) NOT NULL,
+    `displayName` VARCHAR(191) NOT NULL,
     `active` BOOLEAN NULL DEFAULT true,
     `subscribed` BOOLEAN NOT NULL DEFAULT false,
     `admin` BOOLEAN NOT NULL DEFAULT false,

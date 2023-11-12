@@ -1,10 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import express from 'express';
+import wss from '../lib/socket.js';
 
-const router = require('express').Router();
-
-const prisma = new PrismaClient();
-
-const wss = require('../mixins/socket');
+const router = express.Router();
 
 // TODO completely rework this
 router.post('/combat/start', async (req, res) => {
@@ -19,4 +16,4 @@ router.post('/combat/end', async (req, res) => {
   res.sendStatus(200);
 });
 
-module.exports = router;
+export default router;

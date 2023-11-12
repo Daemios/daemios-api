@@ -19,4 +19,4 @@ const cartesian = {
   },
 };
 
-module.exports = cartesian;
+export default cartesian;

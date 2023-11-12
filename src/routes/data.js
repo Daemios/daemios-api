@@ -1,7 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 
-const router = require('express').Router();
+import express from 'express';
 
+const router = express.Router();
 const prisma = new PrismaClient();
 
 router.get('/races', async (req, res) => {

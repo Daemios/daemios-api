@@ -1,15 +1,17 @@
 import { Strategy as LocalStrategy } from 'passport-local';
 import bcrypt from 'bcrypt';
-import users from './mixins/user';
+import { getUserByEmail, getUserById, hashPassword } from './lib/user.js';
 
 function init(passport) {
   const authenticateUser = async (email, password, done) => {
     try {
-      const user = await users.getUserByEmail(email);
+      const user = await getUserByEmail(email);
       if (!user) {
+        console.log('no user found');
         return done(null, false, { message: 'Incorrect email or password' });
       }
       const isMatch = await bcrypt.compare(password, user.password);
+      console.log('isMatch', isMatch);
       if (!isMatch) {
         return done(null, false, { message: 'Incorrect email or password' });
       }
@@ -25,7 +27,7 @@ function init(passport) {
 
   passport.deserializeUser(async (user, done) => {
     try {
-      const foundUser = await users.getUserById(user.user_id);
+      const foundUser = await getUserById(user.user_id);
       done(null, foundUser);
     } catch (err) {
       done(err, null);

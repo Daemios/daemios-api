@@ -1,13 +1,11 @@
-const ws = require('ws');
+import { WebSocketServer } from 'ws';
 
-const wss = new ws.WebSocketServer({ port: 3001 });
+const wss = new WebSocketServer({ port: 3001 });
 
-// eslint-disable-next-line no-console
 console.log('starting socket server');
 
 wss.on('connection', (socket) => {
   socket.on('message', (data) => {
-    // eslint-disable-next-line no-console
     console.log('received: %s', data);
   });
 });
@@ -15,8 +13,10 @@ wss.on('connection', (socket) => {
 wss.send = function broadcast(type, body) {
   const message = JSON.stringify({ type, body });
   wss.clients.forEach((client) => {
-    client.send(message);
+    if (client.readyState === WebSocket.WebSocket.OPEN) {
+      client.send(message);
+    }
   });
 };
 
-module.exports = wss;
+export default wss;

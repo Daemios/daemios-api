@@ -1,17 +1,13 @@
 import { PrismaClient } from '@prisma/client';
 
-const express = require('express');
+import express from 'express';
 
 const router = express.Router();
-
 const prisma = new PrismaClient();
+
 router.get('/elements', async (req, res) => {
   try {
-    const rows = await prisma.elements.findMany();
-    const elements = {};
-    rows.forEach((row) => {
-      elements[row.element_id] = row;
-    });
+    const elements = await prisma.element.findMany();
     res.send(elements);
   } catch (e) {
     console.log(e);
@@ -21,7 +17,7 @@ router.get('/elements', async (req, res) => {
 
 router.get('/types', async (req, res) => {
   try {
-    const rows = await prisma.ability_types.findMany();
+    const rows = await prisma.abilityType.findMany();
     res.send(rows);
   } catch (e) {
     console.log(e);
@@ -29,9 +25,9 @@ router.get('/types', async (req, res) => {
   }
 });
 
-router.get('/shapes', async (req, res, next) => {
+router.get('/shapes', async (req, res) => {
   try {
-    const rows = await prisma.ability_shapes.findMany();
+    const rows = await prisma.abilityShape.findMany();
     res.send(rows);
   } catch (e) {
     console.log(e);
@@ -39,9 +35,9 @@ router.get('/shapes', async (req, res, next) => {
   }
 });
 
-router.get('/ranges', async (req, res, next) => {
+router.get('/ranges', async (req, res) => {
   try {
-    const rows = await prisma.ability_ranges.findMany();
+    const rows = await prisma.abilityRange.findMany();
     res.send(rows);
   } catch (e) {
     console.log(e);
@@ -49,4 +45,4 @@ router.get('/ranges', async (req, res, next) => {
   }
 });
 
-module.exports = router;
+export default router;

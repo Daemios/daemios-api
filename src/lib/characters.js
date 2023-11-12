@@ -30,4 +30,4 @@ const characters = {
   }),
 };
 
-module.exports = characters;
+export default characters;

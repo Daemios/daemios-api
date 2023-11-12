@@ -1,7 +1,7 @@
-const express = require('express');
+import express from 'express';
+import wss from '../lib/socket.js';
 
 const router = express.Router();
-const wss = require('../mixins/socket');
 
 router.get('/terrain', (req, res) => {
   try {
@@ -11,7 +11,7 @@ router.get('/terrain', (req, res) => {
       res.send('arena terrain not generated');
     }
   } catch (e) {
-    console.log(e);
+    console.error(e);
     wss.send('arena terrain not generated');
   }
 });
