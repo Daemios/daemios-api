@@ -5,8 +5,10 @@ const prisma = new PrismaClient();
 const characters = {
   getActiveCharacter: async (userId) => prisma.userCharacter.findFirst({
     where: {
-      user_id: userId,
-      active: 1,
+      user: {
+        id: userId,
+      },
+      active: true,
     },
     include: {
       race: true, // Assuming 'race' is the relation field in your Prisma schema
@@ -14,19 +16,25 @@ const characters = {
   }),
   activateCharacter: async (userId, characterId) => prisma.userCharacter.updateMany({
     where: {
-      user_id: userId,
-      character_id: characterId,
+      user: {
+        id: userId,
+      },
+      id: characterId,
     },
     data: {
-      active: 1,
+      active: true,
     },
   }),
   deactivateCharacters: async (userId) => prisma.userCharacter.updateMany({
-    where: { user_id: userId },
-    data: { active: 0 },
+    where: {
+      user: {
+        id: userId,
+      },
+    },
+    data: { active: false },
   }),
-  getInventory: async (characterId) => prisma.characterInventory.findMany({
-    where: { character_id: characterId },
+  getInventory: async (id) => prisma.characterInventory.findMany({
+    where: { id },
   }),
 };
 

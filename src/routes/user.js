@@ -7,7 +7,7 @@ const router = express.Router();
 
 // Logout user
 router.post('/logout', (req, res) => {
-  characters.deactivateCharacters(req.user.user_id)
+  characters.deactivateCharacters(req.user.id)
     .then(() => req.logout(() => res.json({ success: true })))
     .catch((err) => {
       console.error(err);
@@ -18,13 +18,13 @@ router.post('/logout', (req, res) => {
 // Refresh character data
 router.get('/refresh', async (req, res) => {
   try {
-    const userId = req.session.passport.user.user_id;
+    const userId = req.session.passport.user.id;
     const character = await characters.getActiveCharacter(userId);
 
-    if (!character || !character.character_id) {
+    if (!character || !character.id) {
       return res.status(404).json({ error: 'No active character found' });
     }
-    const inventory = await characters.getInventory(character.character_id);
+    const inventory = await characters.getInventory(character.id);
     res.json({ success: true, character, inventory });
   } catch (err) {
     console.error(err);
@@ -35,21 +35,20 @@ router.get('/refresh', async (req, res) => {
 // Select character
 router.post('/character/select', async (req, res) => {
   try {
-    const userId = req.session.passport.user.user_id;
+    const userId = req.session.passport.user.id;
     const { characterId } = req.body;
 
     await characters.deactivateCharacters(userId);
-    const updateResult = await characters.activateCharacter(userId, characterId);
-
-    if (!updateResult || updateResult.affectedRows === 0) {
+    const rows = await characters.activateCharacter(userId, characterId);
+    if (!rows || rows.count === 0) {
       return res.status(404).json({ error: 'No character found or updated' });
     }
     const character = await characters.getActiveCharacter(userId);
 
-    if (!character || !character.character_id) {
+    if (!character || !character.id) {
       return res.status(404).json({ error: 'No active character found' });
     }
-    const inventory = await characters.getInventory(character.character_id);
+    const inventory = await characters.getInventory(characterId);
     res.json({ success: true, character, inventory });
   } catch (err) {
     console.error(err);
@@ -60,11 +59,22 @@ router.post('/character/select', async (req, res) => {
 // Create character
 router.post('/character/create', async (req, res) => {
   try {
-    const userId = req.session.passport.user.user_id;
+    const userId = req.session.passport.user.id;
+    console.log('userId', userId);
     const { name, raceId, image } = req.body;
+    console.log(req.body);
     await prisma.userCharacter.create({
       data: {
-        userId, name, raceId, image,
+        name,
+        image,
+        user: {
+          connect: { id: userId },
+        },
+        race: {
+          connect: {
+            id: raceId,
+          },
+        },
       },
     });
 
@@ -78,14 +88,10 @@ router.post('/character/create', async (req, res) => {
 // Get characters
 router.get('/characters', async (req, res) => {
   try {
-    const userId = req.session.passport.user.user_id;
+    const userId = req.session.passport.user.id;
     const rows = await prisma.userCharacter.findMany({
-      where: { user_id: userId },
+      where: { userId },
     });
-
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'No characters found' });
-    }
     const userCharacters = rows.map((row) => ({
       ...row,
       location: { dangerous: true, name: 'The Wilds' },

@@ -16,17 +16,21 @@ export const createUser = async ({ email, password, displayName }) => prisma.use
   },
 });
 
-export const getUserByEmail = async (email) => prisma.user.findUnique({
-  where: {
-    email,
-  },
-});
+export const getUser = async ({ id, email }) => {
+  const whereClause = {};
 
-export const getUserById = async (id) => prisma.user.findUnique({
-  where: {
-    user_id: id,
-  },
-});
+  if (email) {
+    whereClause.email = email;
+  }
+
+  if (id) {
+    whereClause.id = id;
+  }
+
+  return prisma.user.findUnique({
+    where: whereClause,
+  });
+};
 
 export const validateRegistration = ({
   email, password, passwordConfirm, displayName,
