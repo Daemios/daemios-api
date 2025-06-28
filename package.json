@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
+    "test": "node test/broadcast.test.js",
     "prisma:migrate": "prisma migrate deploy",
     "prisma:generate": "prisma generate",
     "test": "node --test"
