@@ -88,9 +88,7 @@ app.use('/arena', arenaRoutes);
 app.use('/world', worldRoutes);
 app.use('/dm', dmRoutes);
 
-app.listen(3000, () => {
-  console.log('Listening for requests');
-});
+export default app;
 
 /**
  // Arena stuff

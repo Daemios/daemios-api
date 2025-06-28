@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node src/app.js",
-    "dev": "nodemon src/app.js",
+    "start": "node src/bin/www",
+    "dev": "nodemon src/bin/www",
     "prisma:migrate": "prisma migrate deploy",
     "prisma:generate": "prisma generate"
   },
