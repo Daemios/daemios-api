@@ -21,6 +21,7 @@ import abilityRoutes from './routes/ability.js';
 import arenaRoutes from './routes/arena.js';
 import worldRoutes from './routes/world.js';
 import dmRoutes from './routes/dm.js';
+import setupArenaWorld from './lib/setupArenaWorld.js';
 
 if (process.env.NODE_ENV !== 'production') {
   dotenv.config();
@@ -88,27 +89,10 @@ app.use('/arena', arenaRoutes);
 app.use('/world', worldRoutes);
 app.use('/dm', dmRoutes);
 
+// Initialize arena and world data
+setupArenaWorld(app);
+
 app.listen(3000, () => {
   console.log('Listening for requests');
 });
 
-/**
- // Arena stuff
- // TODO move this somewhere more appropriate
-app.locals.arena = {};
-pool.getConnection()
-  .then((conn) => {
-    conn.query('SELECT * FROM arena_history ORDER BY last_active DESC LIMIT 1')
-      .then((single) => {
-        app.locals.arena.terrain = generate.arena.simplexTerrain(single[0].size, single[0].seed);
-        wss.send('arena', app.locals.arena);
-      });
-  });
-
-// World stuff
-app.locals.world = {
-  size: 256,
-  seed: 'einstein2',
-};
-wss.send('world', app.locals.world);
-* */
