@@ -91,24 +91,3 @@ app.use('/dm', dmRoutes);
 app.listen(3000, () => {
   console.log('Listening for requests');
 });
-
-/**
- // Arena stuff
- // TODO move this somewhere more appropriate
-app.locals.arena = {};
-pool.getConnection()
-  .then((conn) => {
-    conn.query('SELECT * FROM arena_history ORDER BY last_active DESC LIMIT 1')
-      .then((single) => {
-        app.locals.arena.terrain = generate.arena.simplexTerrain(single[0].size, single[0].seed);
-        wss.send('arena', app.locals.arena);
-      });
-  });
-
-// World stuff
-app.locals.world = {
-  size: 256,
-  seed: 'einstein2',
-};
-wss.send('world', app.locals.world);
-* */
