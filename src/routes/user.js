@@ -24,8 +24,7 @@ router.get('/refresh', async (req, res) => {
     if (!character || !character.id) {
       return res.status(404).json({ error: 'No active character found' });
     }
-    const inventory = await characters.getInventory(character.id);
-    res.json({ success: true, character, inventory });
+    res.json({ success: true, character });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'An error occurred' });
@@ -48,8 +47,7 @@ router.post('/character/select', async (req, res) => {
     if (!character || !character.id) {
       return res.status(404).json({ error: 'No active character found' });
     }
-    const inventory = await characters.getInventory(characterId);
-    res.json({ success: true, character, inventory });
+    res.json({ success: true, character });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'An error occurred' });
@@ -63,12 +61,14 @@ router.post('/character/create', async (req, res) => {
     console.log('userId', userId);
     const { name, raceId, image } = req.body;
     console.log(req.body);
-    await prisma.userCharacter.create({
+    await prisma.character.create({
       data: {
         name,
         image,
         user: {
-          connect: { id: userId },
+          connect: {
+            id: userId,
+          },
         },
         race: {
           connect: {
@@ -78,6 +78,9 @@ router.post('/character/create', async (req, res) => {
       },
     });
 
+    // TODO add the intro adventure to the character to give them first abilities, etc
+    // each node should reward an option of 3 abilities,
+    // and the final node should reward a vessel (maybe)
     res.status(200).json({ success: 'Character created' });
   } catch (err) {
     console.error(err);
@@ -89,17 +92,17 @@ router.post('/character/create', async (req, res) => {
 router.get('/characters', async (req, res) => {
   try {
     const userId = req.session.passport.user.id;
-    const rows = await prisma.userCharacter.findMany({
+    const rows = await prisma.character.findMany({
       where: { userId },
     });
-    const userCharacters = rows.map((row) => ({
+    const characters = rows.map((row) => ({
       ...row,
       location: { dangerous: true, name: 'The Wilds' },
       level: 1,
       vessels: [{ color: '#156156' }, { color: '#a12078' }],
     }));
 
-    res.json({ success: true, userCharacters });
+    res.json({ success: true, characters });
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'Server Error' });
