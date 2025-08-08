@@ -8,7 +8,7 @@ export default async function setupArenaWorld(app) {
   // Initialize arena data
   app.locals.arena = {};
   try {
-    const last = await prisma.arena_history.findFirst({
+  const last = await prisma.arenaHistory.findFirst({
       orderBy: { last_active: 'desc' },
     });
     if (last) {

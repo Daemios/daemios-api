@@ -38,13 +38,13 @@ router.get('/terrain', (req, res) => {
 
 router.get('/list', async (req, res) => {
   try {
-    const arenas = await prisma.arena_history.findMany({
+  const arenas = await prisma.arenaHistory.findMany({
       orderBy: { created_on: 'desc' },
       take: 10,
     });
 
     if (arenas) {
-      const active = await prisma.arena_history.findFirst({
+  const active = await prisma.arenaHistory.findFirst({
         orderBy: { last_active: 'desc' },
       });
 
@@ -63,7 +63,7 @@ router.get('/list', async (req, res) => {
 
 router.get('/single/:id', async (req, res) => {
   try {
-    const rows = await prisma.arena_history.findMany({
+  const rows = await prisma.arenaHistory.findMany({
       where: { arena_history_id: parseInt(req.params.id, 10) },
     });
     res.send(rows);
@@ -76,12 +76,12 @@ router.get('/single/:id', async (req, res) => {
 router.delete('/single/:id', async (req, res) => {
   try {
     if (req.params.id) {
-      const deleteResult = await prisma.arena_history.delete({
+  const deleteResult = await prisma.arenaHistory.delete({
         where: { arena_history_id: parseInt(req.params.id, 10) },
       });
 
       if (deleteResult) {
-        const rows = await prisma.arena_history.findMany({
+  const rows = await prisma.arenaHistory.findMany({
           orderBy: { last_updated: 'desc' },
           take: 10,
         });
@@ -98,22 +98,22 @@ router.delete('/single/:id', async (req, res) => {
 
 router.post('/load/:id', async (req, res) => {
   try {
-    const single = await prisma.arena_history.findFirst({
+  const single = await prisma.arenaHistory.findFirst({
       where: { arena_history_id: req.params.id },
     });
 
     if (single) {
-      await prisma.arena_history.update({
+  await prisma.arenaHistory.update({
         where: { arena_history_id: single.arena_history_id },
         data: { last_active: new Date() },
       });
 
-      const arenas = await prisma.arena_history.findMany({
+  const arenas = await prisma.arenaHistory.findMany({
         orderBy: { created_on: 'desc' },
         take: 10,
       });
 
-      const active = await prisma.arena_history.findFirst({
+  const active = await prisma.arenaHistory.findFirst({
         orderBy: { last_active: 'desc' },
       });
 
@@ -137,7 +137,7 @@ router.post('/create', async (req, res) => {
     const { name, size } = req.body;
     if (name && size) {
       const seed = crypto.randomBytes(20).toString('hex');
-      const createResult = await prisma.arena_history.create({
+  const createResult = await prisma.arenaHistory.create({
         data: {
           name,
           seed,
@@ -146,7 +146,7 @@ router.post('/create', async (req, res) => {
       });
 
       if (createResult) {
-        const arenas = await prisma.arena_history.findMany({
+  const arenas = await prisma.arenaHistory.findMany({
           orderBy: { last_updated: 'desc' },
           take: 10,
         });
